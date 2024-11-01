@@ -1518,6 +1518,7 @@ dependencies = [
  "dirs",
  "git2",
  "pgp",
+ "rand",
 ]
 
 [[package]]
