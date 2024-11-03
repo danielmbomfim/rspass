@@ -1,6 +1,6 @@
 use clap::Parser;
 use colored::Colorize;
-use rspass_core::{generate_password, initialize_repository, insert_credential};
+use rspass_core::{generate_keys, generate_password, initialize_repository, insert_credential};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -58,6 +58,36 @@ fn main() {
 
     match args.command {
         Commands::Init => {
+            let mut name = String::new();
+            let mut email = String::new();
+            let mut password = String::new();
+
+            println!("Enter the name to be used in the pgp key");
+            std::io::stdin()
+                .read_line(&mut name)
+                .expect("failed to get read name");
+
+            println!("Enter the email to be used in the pgp key");
+            std::io::stdin()
+                .read_line(&mut email)
+                .expect("failed to get read email");
+
+            println!("Enter the password to be used in the pgp key");
+            std::io::stdin()
+                .read_line(&mut password)
+                .expect("failed to get read password");
+
+            match generate_keys(&name, &email, &password) {
+                Ok(path) => {
+                    println!("\nKeys generated at {path}");
+                    println!("{} Do NOT share this key files! Anyone with access to them may be able to decrypt and use your data.", "WARNING:".yellow());
+                }
+                Err(err) => {
+                    eprintln!("{}", format_err(err));
+                    return;
+                }
+            }
+
             match initialize_repository() {
                 Ok(path) => println!("repository initialized in {}", path),
                 Err(err) => eprintln!("{}", format_err(err)),
