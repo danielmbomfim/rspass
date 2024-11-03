@@ -59,8 +59,8 @@ fn main() {
     match args.command {
         Commands::Init => {
             match initialize_repository() {
-                Ok(path) => println!("repository initialazed in {}", path),
-                Err(err) => println!("{}", format_err(err)),
+                Ok(path) => println!("repository initialized in {}", path),
+                Err(err) => eprintln!("{}", format_err(err)),
             };
         }
         Commands::Insert {
@@ -77,7 +77,7 @@ fn main() {
 
             match insert_credential(&name, &password, metadata) {
                 Ok(_) => println!("Credential saved"),
-                Err(err) => println!("{}", format_err(err)),
+                Err(err) => eprintln!("{}", format_err(err)),
             };
         }
         _ => todo!(),
