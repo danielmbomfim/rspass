@@ -77,7 +77,7 @@ fn main() {
                 .read_line(&mut password)
                 .expect("failed to get read password");
 
-            match generate_keys(&name, &email, &password) {
+            match generate_keys(name.trim(), email.trim(), password.trim()) {
                 Ok(path) => {
                     println!("\nKeys generated at {path}");
                     println!("{} Do NOT share this key files! Anyone with access to them may be able to decrypt and use your data.", "WARNING:".yellow());
