@@ -33,6 +33,8 @@ enum Commands {
     },
     Get {
         name: String,
+        #[arg(short, long, default_value = "false")]
+        full: bool,
     },
     Rm {
         text: String,
@@ -115,13 +117,13 @@ fn main() {
                 Err(err) => eprintln!("{}", format_err(err)),
             };
         }
-        Commands::Get { name } => {
+        Commands::Get { name, full } => {
             let mut password = String::new();
 
             println!("Enter the password of the PGP key:");
             std::io::stdin().read_line(&mut password).unwrap();
 
-            match get_credential(&name, password.trim()) {
+            match get_credential(&name, password.trim(), full) {
                 Ok(credential) => println!("{}", credential),
                 Err(err) => eprintln!("{}", format_err(err)),
             }
