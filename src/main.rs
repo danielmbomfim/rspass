@@ -1,6 +1,8 @@
 use clap::Parser;
 use colored::Colorize;
-use rspass_core::{generate_keys, generate_password, initialize_repository, insert_credential};
+use rspass_core::{
+    generate_keys, generate_password, get_credential, initialize_repository, insert_credential,
+};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -28,6 +30,9 @@ enum Commands {
         metadata: Option<Vec<(String, String)>>,
         #[arg(short, default_value = "10")]
         length: u8,
+    },
+    Get {
+        name: String,
     },
     Rm {
         text: String,
@@ -109,6 +114,17 @@ fn main() {
                 Ok(_) => println!("Credential saved"),
                 Err(err) => eprintln!("{}", format_err(err)),
             };
+        }
+        Commands::Get { name } => {
+            let mut password = String::new();
+
+            println!("Enter the password of the PGP key:");
+            std::io::stdin().read_line(&mut password).unwrap();
+
+            match get_credential(&name, password.trim()) {
+                Ok(credential) => println!("{}", credential),
+                Err(err) => eprintln!("{}", format_err(err)),
+            }
         }
         _ => todo!(),
     }
