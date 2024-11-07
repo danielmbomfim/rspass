@@ -1,7 +1,8 @@
 use clap::Parser;
 use colored::Colorize;
 use rspass_core::{
-    generate_keys, generate_password, get_credential, initialize_repository, insert_credential,
+    edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
+    insert_credential,
 };
 
 #[derive(Debug, Parser)]
@@ -13,12 +14,6 @@ struct Args {
 #[derive(Debug, Parser)]
 enum Commands {
     Init,
-    Grep {
-        text: String,
-    },
-    Find {
-        text: String,
-    },
     Ls {
         text: String,
     },
@@ -26,7 +21,7 @@ enum Commands {
         name: String,
         #[arg(required = false)]
         password: Option<String>,
-        #[arg(short, long, value_delimiter = ' ', num_args = 1.., value_parser = parse_value)]
+        #[arg(short, long, value_delimiter = ' ', num_args = 1.., value_parser = parse_key_value)]
         metadata: Option<Vec<(String, String)>>,
         #[arg(short, default_value = "10")]
         length: u8,
@@ -40,14 +35,19 @@ enum Commands {
         text: String,
     },
     Edit {
-        text: String,
+        name: String,
+        password: Option<String>,
+        #[arg(short, long, value_delimiter = ' ', num_args = 1.., value_parser = parse_key_value)]
+        add_metadata: Option<Vec<(String, String)>>,
+        #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
+        remove_metadata: Option<Vec<String>>,
     },
     Mv {
         text: String,
     },
 }
 
-fn parse_value(value: &str) -> Result<(String, String), String> {
+fn parse_key_value(value: &str) -> Result<(String, String), String> {
     let parts = value.split_once("=");
 
     match parts {
@@ -125,6 +125,44 @@ fn main() {
 
             match get_credential(&name, password.trim(), full) {
                 Ok(credential) => println!("{}", credential),
+                Err(err) => eprintln!("{}", format_err(err)),
+            }
+        }
+        Commands::Edit {
+            name,
+            password,
+            add_metadata,
+            remove_metadata,
+        } => {
+            let mut pgp_password = String::new();
+            let mut metadata = Vec::new();
+
+            if let Some(data) = add_metadata {
+                data.into_iter().for_each(|(key, value)| {
+                    metadata.push((key, Some(value)));
+                });
+            }
+
+            if let Some(data) = remove_metadata {
+                data.into_iter().for_each(|key| {
+                    metadata.push((key, None));
+                });
+            }
+
+            println!("Enter the pgp_password of the PGP key:");
+            std::io::stdin().read_line(&mut pgp_password).unwrap();
+
+            match edit_credential(
+                &name,
+                pgp_password.trim(),
+                password.as_deref(),
+                if metadata.is_empty() {
+                    None
+                } else {
+                    Some(metadata)
+                },
+            ) {
+                Ok(_) => {}
                 Err(err) => eprintln!("{}", format_err(err)),
             }
         }
