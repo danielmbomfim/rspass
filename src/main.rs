@@ -1,5 +1,10 @@
 use clap::Parser;
 use colored::Colorize;
+use crossterm::{
+    cursor::MoveUp,
+    execute,
+    terminal::{Clear, ClearType},
+};
 use rspass_core::{
     edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
     insert_credential,
@@ -124,7 +129,15 @@ fn main() {
             std::io::stdin().read_line(&mut password).unwrap();
 
             match get_credential(&name, password.trim(), full) {
-                Ok(credential) => println!("{}", credential),
+                Ok(credential) => {
+                    execute!(
+                        std::io::stdout(),
+                        MoveUp(2),
+                        Clear(ClearType::FromCursorDown)
+                    )
+                    .unwrap();
+                    println!("{}", credential);
+                }
                 Err(err) => eprintln!("{}", format_err(err)),
             }
         }
@@ -162,7 +175,15 @@ fn main() {
                     Some(metadata)
                 },
             ) {
-                Ok(_) => {}
+                Ok(_) => {
+                    execute!(
+                        std::io::stdout(),
+                        MoveUp(2),
+                        Clear(ClearType::FromCursorDown)
+                    )
+                    .unwrap();
+                    println!("Credential saved");
+                }
                 Err(err) => eprintln!("{}", format_err(err)),
             }
         }
