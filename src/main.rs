@@ -7,7 +7,7 @@ use crossterm::{
 };
 use rspass_core::{
     edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
-    insert_credential,
+    insert_credential, remove_credential,
 };
 
 #[derive(Debug, Parser)]
@@ -37,7 +37,7 @@ enum Commands {
         full: bool,
     },
     Rm {
-        text: String,
+        name: String,
     },
     Edit {
         name: String,
@@ -187,7 +187,12 @@ fn main() {
                 Err(err) => eprintln!("{}", format_err(err)),
             }
         }
-        _ => todo!(),
+        Commands::Rm { name } => match remove_credential(&name) {
+            Ok(_) => println!("Credential removed"),
+            Err(err) => eprintln!("{}", format_err(err)),
+        },
+        Commands::Mv { text: _ } => todo!(),
+        Commands::Ls { text: _ } => todo!(),
     }
 }
 
