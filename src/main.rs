@@ -6,8 +6,8 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use rspass_core::{
-    edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
-    insert_credential, move_credential, remove_credential,
+    edit_credential, generate_keys, generate_password, get_credential, get_credentials,
+    initialize_repository, insert_credential, move_credential, remove_credential,
 };
 
 #[derive(Debug, Parser)]
@@ -20,7 +20,7 @@ struct Args {
 enum Commands {
     Init,
     Ls {
-        text: String,
+        name: Option<String>,
     },
     Insert {
         name: String,
@@ -199,7 +199,17 @@ fn main() {
             Ok(_) => println!("Credential moved"),
             Err(err) => eprintln!("{}", format_err(err)),
         },
-        Commands::Ls { text: _ } => todo!(),
+        Commands::Ls { name } => {
+            let list: Vec<String> = get_credentials(name.as_deref())
+                .iter()
+                .map(|item| {
+                    let parts: Vec<&str> = item.splitn(2, "rspass/").collect();
+                    parts[1].to_owned()
+                })
+                .collect();
+
+            println!("{}", list.join("\n"));
+        }
     }
 }
 
