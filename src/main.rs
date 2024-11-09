@@ -7,7 +7,7 @@ use crossterm::{
 };
 use rspass_core::{
     edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
-    insert_credential, remove_credential,
+    insert_credential, move_credential, remove_credential,
 };
 
 #[derive(Debug, Parser)]
@@ -48,7 +48,8 @@ enum Commands {
         remove_metadata: Option<Vec<String>>,
     },
     Mv {
-        text: String,
+        target: String,
+        destination: String,
     },
 }
 
@@ -191,7 +192,13 @@ fn main() {
             Ok(_) => println!("Credential removed"),
             Err(err) => eprintln!("{}", format_err(err)),
         },
-        Commands::Mv { text: _ } => todo!(),
+        Commands::Mv {
+            target,
+            destination,
+        } => match move_credential(&target, &destination) {
+            Ok(_) => println!("Credential moved"),
+            Err(err) => eprintln!("{}", format_err(err)),
+        },
         Commands::Ls { text: _ } => todo!(),
     }
 }
