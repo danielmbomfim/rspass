@@ -73,22 +73,20 @@ fn main() {
         Commands::Init => {
             let mut name = String::new();
             let mut email = String::new();
-            let mut password = String::new();
 
-            println!("Enter the name to be used in the pgp key");
+            println!("Enter the name to be used in the pgp key:");
             std::io::stdin()
                 .read_line(&mut name)
-                .expect("failed to get read name");
+                .expect("failed to get read name:");
 
-            println!("Enter the email to be used in the pgp key");
+            println!("Enter the email to be used in the pgp key:");
             std::io::stdin()
                 .read_line(&mut email)
                 .expect("failed to get read email");
 
-            println!("Enter the password to be used in the pgp key");
-            std::io::stdin()
-                .read_line(&mut password)
-                .expect("failed to get read password");
+            let password =
+                rpassword::prompt_password("Enter the password to be used in the pgp key:")
+                    .expect("failed to get read password");
 
             match generate_keys(name.trim(), email.trim(), password.trim()) {
                 Ok(path) => {
@@ -124,10 +122,8 @@ fn main() {
             };
         }
         Commands::Get { name, full } => {
-            let mut password = String::new();
-
-            println!("Enter the password of the PGP key:");
-            std::io::stdin().read_line(&mut password).unwrap();
+            let password = rpassword::prompt_password("Enter the password of the PGP key:")
+                .expect("failed to get read password");
 
             match get_credential(&name, password.trim(), full) {
                 Ok(credential) => {
@@ -148,7 +144,6 @@ fn main() {
             add_metadata,
             remove_metadata,
         } => {
-            let mut pgp_password = String::new();
             let mut metadata = Vec::new();
 
             if let Some(data) = add_metadata {
@@ -163,8 +158,8 @@ fn main() {
                 });
             }
 
-            println!("Enter the pgp_password of the PGP key:");
-            std::io::stdin().read_line(&mut pgp_password).unwrap();
+            let pgp_password = rpassword::prompt_password("Enter the pgp_password of the PGP key:")
+                .expect("failed to get read password");
 
             match edit_credential(
                 &name,

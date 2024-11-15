@@ -7,4 +7,5 @@ edition = "2021"
 clap = { version = "4.5.20", features = ["derive"] }
 colored = "2.1.0"
 crossterm = "0.28.1"
+rpassword = "7.3.1"
 rspass-core = { git = "https://github.com/danielmbomfim/rspass-core.git", rev = "12c74c3" }
