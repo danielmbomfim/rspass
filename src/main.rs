@@ -127,13 +127,16 @@ fn main() {
 
             match get_credential(&name, password.trim(), full) {
                 Ok(credential) => {
-                    execute!(
-                        std::io::stdout(),
-                        MoveUp(2),
-                        Clear(ClearType::FromCursorDown)
-                    )
-                    .unwrap();
-                    println!("{}", credential);
+                    if atty::is(atty::Stream::Stdout) {
+                        execute!(
+                            std::io::stdout(),
+                            MoveUp(1),
+                            Clear(ClearType::FromCursorDown)
+                        )
+                        .unwrap();
+                    }
+
+                    print!("{}", credential);
                 }
                 Err(err) => eprintln!("{}", format_err(err)),
             }
