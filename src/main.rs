@@ -24,8 +24,6 @@ enum Commands {
     },
     Insert {
         name: String,
-        #[arg(required = false)]
-        password: Option<String>,
         #[arg(short, long, value_delimiter = ' ', num_args = 1.., value_parser = parse_key_value)]
         metadata: Option<Vec<(String, String)>>,
         #[arg(short, default_value = "10")]
@@ -85,7 +83,7 @@ fn main() {
                 .expect("failed to get read email");
 
             let password =
-                rpassword::prompt_password("Enter the password to be used in the pgp key:")
+                rpassword::prompt_password("Enter the password to be used in the pgp key: ")
                     .expect("failed to get read password");
 
             match generate_keys(name.trim(), email.trim(), password.trim()) {
@@ -106,15 +104,19 @@ fn main() {
         }
         Commands::Insert {
             name,
-            password,
             metadata,
             length,
         } => {
-            let password = password.unwrap_or_else(|| {
-                println!("generating password with {length} characters generated");
+            let password = rpassword::prompt_password(
+                "Enter your password or press Enter to generate a random one: ",
+            )
+            .expect("failed to get read password");
 
+            let password = if password.is_empty() {
                 generate_password(length as usize)
-            });
+            } else {
+                password.trim().to_owned()
+            };
 
             match insert_credential(&name, &password, metadata) {
                 Ok(_) => println!("Credential saved"),
@@ -122,7 +124,7 @@ fn main() {
             };
         }
         Commands::Get { name, full } => {
-            let password = rpassword::prompt_password("Enter the password of the PGP key:")
+            let password = rpassword::prompt_password("Enter the password of the PGP key: ")
                 .expect("failed to get read password");
 
             match get_credential(&name, password.trim(), full) {
@@ -161,8 +163,9 @@ fn main() {
                 });
             }
 
-            let pgp_password = rpassword::prompt_password("Enter the pgp_password of the PGP key:")
-                .expect("failed to get read password");
+            let pgp_password =
+                rpassword::prompt_password("Enter the pgp_password of the PGP key: ")
+                    .expect("failed to get read password");
 
             match edit_credential(
                 &name,
