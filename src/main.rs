@@ -39,7 +39,8 @@ enum Commands {
     },
     Edit {
         name: String,
-        password: Option<String>,
+        #[arg(short, long, default_value = "false")]
+        password: bool,
         #[arg(short, long, value_delimiter = ' ', num_args = 1.., value_parser = parse_key_value)]
         add_metadata: Option<Vec<(String, String)>>,
         #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
@@ -151,6 +152,15 @@ fn main() {
         } => {
             let mut metadata = Vec::new();
 
+            let mut credential_password = None;
+
+            if password {
+                credential_password = Some(
+                    rpassword::prompt_password("Enter your new password: ")
+                        .expect("failed to get read password"),
+                );
+            }
+
             if let Some(data) = add_metadata {
                 data.into_iter().for_each(|(key, value)| {
                     metadata.push((key, Some(value)));
@@ -170,7 +180,7 @@ fn main() {
             match edit_credential(
                 &name,
                 pgp_password.trim(),
-                password.as_deref(),
+                credential_password.as_deref(),
                 if metadata.is_empty() {
                     None
                 } else {
