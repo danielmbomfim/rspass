@@ -1796,7 +1796,7 @@ dependencies = [
 
 [[package]]
 name = "rspass"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "atty",
  "clap",
