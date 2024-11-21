@@ -1,4 +1,5 @@
-use clap::Parser;
+use clap::{builder::PossibleValuesParser, CommandFactory, Parser, Subcommand};
+use clap_complete::{generate, Shell};
 use colored::Colorize;
 use crossterm::{
     cursor::MoveUp,
@@ -16,10 +17,15 @@ struct Args {
     command: Commands,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Subcommand)]
 enum Commands {
+    GenerateCompletions {
+        #[arg(default_value = Shell::from_env().unwrap_or(Shell::Bash).to_string())]
+        shell: Shell,
+    },
     Init,
     Ls {
+        #[arg(value_parser = list_credentials_folders())]
         name: Option<String>,
     },
     Insert {
@@ -30,14 +36,17 @@ enum Commands {
         length: u8,
     },
     Get {
+        #[arg(value_parser = list_credentials_folders())]
         name: String,
         #[arg(short, long, default_value = "false")]
         full: bool,
     },
     Rm {
+        #[arg(value_parser = list_credentials_folders())]
         name: String,
     },
     Edit {
+        #[arg(value_parser = list_credentials_folders())]
         name: String,
         #[arg(short, long, default_value = "false")]
         password: bool,
@@ -47,6 +56,7 @@ enum Commands {
         remove_metadata: Option<Vec<String>>,
     },
     Mv {
+        #[arg(value_parser = list_credentials_folders())]
         target: String,
         destination: String,
     },
@@ -69,6 +79,14 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
+        Commands::GenerateCompletions { shell } => {
+            generate(
+                shell,
+                &mut Args::command(),
+                "rspass",
+                &mut std::io::stdout(),
+            );
+        }
         Commands::Init => {
             let mut name = String::new();
             let mut email = String::new();
@@ -228,4 +246,16 @@ fn format_err(err: rspass_core::Error) -> String {
     let kind = format!("{:?}", err.kind).red();
 
     format!("{} :: {}", kind, err.message)
+}
+
+fn list_credentials_folders() -> PossibleValuesParser {
+    let paths: Vec<String> = get_credentials(None)
+        .iter()
+        .map(|item| {
+            let parts: Vec<&str> = item.splitn(2, "rspass/").collect();
+            parts[1].to_owned()
+        })
+        .collect();
+
+    PossibleValuesParser::new(paths)
 }

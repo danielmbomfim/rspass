@@ -5,7 +5,8 @@ edition = "2021"
 
 [dependencies]
 atty = "0.2.14"
-clap = { version = "4.5.20", features = ["derive"] }
+clap = { version = "4.5.20", features = ["derive", "string"] }
+clap_complete = "4.5.38"
 colored = "2.1.0"
 crossterm = "0.28.1"
 rpassword = "7.3.1"
