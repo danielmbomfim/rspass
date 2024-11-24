@@ -232,7 +232,7 @@ fn main() {
             Err(err) => eprintln!("{}", format_err(err)),
         },
         Commands::Ls { name } => {
-            if let Some(values) = list_credentials(name) {
+            if let Some(values) = list_credentials(name, false) {
                 values.iter().for_each(|item| println!("{}", item));
             }
         }

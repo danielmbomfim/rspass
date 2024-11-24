@@ -21,9 +21,13 @@ impl CredentialItem {
     }
 
     fn matches(&self, value: &String) -> bool {
+        self.inner() == value
+    }
+
+    fn inner(&self) -> &String {
         match self {
-            CredentialItem::Dir(credential) => credential == value,
-            CredentialItem::File(credential) => credential == value,
+            CredentialItem::Dir(s) => s,
+            CredentialItem::File(s) => s,
         }
     }
 }
@@ -53,7 +57,7 @@ impl std::fmt::Display for CredentialItem {
     }
 }
 
-pub fn list_credentials(path: Option<String>) -> Option<Vec<CredentialItem>> {
+pub fn list_credentials(path: Option<String>, recursive: bool) -> Option<Vec<CredentialItem>> {
     let mut repo = get_repo_path();
 
     if let Some(value) = path {
@@ -70,8 +74,20 @@ pub fn list_credentials(path: Option<String>) -> Option<Vec<CredentialItem>> {
                 return None;
             }
 
-            Some(CredentialItem::from(value))
+            let item_path = &value.path();
+            let item = CredentialItem::from(value);
+
+            if recursive && item.is_dir() {
+                let mut sub_items =
+                    list_credentials(Some(item_path.to_string_lossy().to_string()), recursive)?;
+
+                sub_items.push(item);
+                return Some(sub_items.into_iter());
+            }
+
+            Some(vec![item].into_iter())
         })
+        .flatten()
         .collect();
 
     Some(credentials)
@@ -80,26 +96,43 @@ pub fn list_credentials(path: Option<String>) -> Option<Vec<CredentialItem>> {
 #[derive(Clone, Debug)]
 pub struct CredentialValuesParser(Vec<CredentialItem>);
 
-#[allow(dead_code)]
 impl CredentialValuesParser {
+    #[allow(dead_code)]
     pub fn all() -> CredentialValuesParser {
-        let items = list_credentials(None);
+        let items = list_credentials(None, true);
 
         CredentialValuesParser(items.unwrap_or_else(Vec::new))
     }
 
     pub fn dirs() -> CredentialValuesParser {
-        let items = list_credentials(None)
+        let items = list_credentials(None, true)
             .map(|value| value.into_iter().filter(CredentialItem::is_dir).collect());
 
         CredentialValuesParser(items.unwrap_or_else(Vec::new))
     }
 
     pub fn files() -> CredentialValuesParser {
-        let items =
-            list_credentials(None).map(|value| value.into_iter().filter(|i| !i.is_dir()).collect());
+        let items = list_credentials(None, true)
+            .map(|value| value.into_iter().filter(|i| !i.is_dir()).collect());
 
         CredentialValuesParser(items.unwrap_or_else(Vec::new))
+    }
+
+    fn filter_by_base(&self, value: &str) -> Vec<&CredentialItem> {
+        let parts: Vec<_> = value.split("/").collect();
+
+        let base = match parts.split_last() {
+            Some((_, base)) => Some(base.join("/")),
+            None => None,
+        };
+
+        self.0
+            .iter()
+            .filter(|item| match base.as_ref() {
+                Some(base) => item.inner().starts_with(base),
+                None => true,
+            })
+            .collect()
     }
 }
 
@@ -136,7 +169,7 @@ impl TypedValueParser for CredentialValuesParser {
         if self.0.iter().any(|v| v.matches(&value)) {
             Ok(value)
         } else {
-            let possible_vals = self.0.iter().collect::<Vec<_>>();
+            let possible_vals = self.filter_by_base(&value);
 
             let mut err = Error::new(ErrorKind::InvalidValue).with_cmd(cmd);
             err.insert(
