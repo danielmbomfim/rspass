@@ -1,4 +1,4 @@
-use clap::{builder::PossibleValuesParser, CommandFactory, Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell};
 use colored::Colorize;
 use crossterm::{
@@ -7,9 +7,12 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use rspass_core::{
-    edit_credential, generate_keys, generate_password, get_credential, get_credentials,
-    initialize_repository, insert_credential, move_credential, remove_credential,
+    edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
+    insert_credential, move_credential, remove_credential,
 };
+use validators::{list_credentials, CredentialValuesParser};
+
+mod validators;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -25,7 +28,7 @@ enum Commands {
     },
     Init,
     Ls {
-        #[arg(value_parser = list_credentials_folders())]
+        #[arg(value_parser = CredentialValuesParser::dirs())]
         name: Option<String>,
     },
     Insert {
@@ -36,17 +39,17 @@ enum Commands {
         length: u8,
     },
     Get {
-        #[arg(value_parser = list_credentials_folders())]
+        #[arg(value_parser = CredentialValuesParser::files())]
         name: String,
         #[arg(short, long, default_value = "false")]
         full: bool,
     },
     Rm {
-        #[arg(value_parser = list_credentials_folders())]
+        #[arg(value_parser = CredentialValuesParser::files())]
         name: String,
     },
     Edit {
-        #[arg(value_parser = list_credentials_folders())]
+        #[arg(value_parser = CredentialValuesParser::files())]
         name: String,
         #[arg(short, long, default_value = "false")]
         password: bool,
@@ -56,7 +59,7 @@ enum Commands {
         remove_metadata: Option<Vec<String>>,
     },
     Mv {
-        #[arg(value_parser = list_credentials_folders())]
+        #[arg(value_parser = CredentialValuesParser::files())]
         target: String,
         destination: String,
     },
@@ -229,15 +232,9 @@ fn main() {
             Err(err) => eprintln!("{}", format_err(err)),
         },
         Commands::Ls { name } => {
-            let list: Vec<String> = get_credentials(name.as_deref())
-                .iter()
-                .map(|item| {
-                    let parts: Vec<&str> = item.splitn(2, "rspass/").collect();
-                    parts[1].to_owned()
-                })
-                .collect();
-
-            println!("{}", list.join("\n"));
+            if let Some(values) = list_credentials(name) {
+                values.iter().for_each(|item| println!("{}", item));
+            }
         }
     }
 }
@@ -246,16 +243,4 @@ fn format_err(err: rspass_core::Error) -> String {
     let kind = format!("{:?}", err.kind).red();
 
     format!("{} :: {}", kind, err.message)
-}
-
-fn list_credentials_folders() -> PossibleValuesParser {
-    let paths: Vec<String> = get_credentials(None)
-        .iter()
-        .map(|item| {
-            let parts: Vec<&str> = item.splitn(2, "rspass/").collect();
-            parts[1].to_owned()
-        })
-        .collect();
-
-    PossibleValuesParser::new(paths)
 }

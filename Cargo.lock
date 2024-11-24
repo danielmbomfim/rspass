@@ -1818,8 +1818,8 @@ dependencies = [
 
 [[package]]
 name = "rspass-core"
-version = "0.1.0"
-source = "git+https://github.com/danielmbomfim/rspass-core.git?rev=12c74c3#12c74c3406b35bbb1d9edacf5c5c7fcc576e4d09"
+version = "0.2.0"
+source = "git+https://github.com/danielmbomfim/rspass-core.git?rev=33f8034#33f8034afd80327259653efa9273cdb6acb93889"
 dependencies = [
  "chrono",
  "dirs",
