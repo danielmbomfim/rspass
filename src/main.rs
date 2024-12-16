@@ -10,8 +10,10 @@ use rspass_core::{
     edit_credential, generate_keys, generate_password, get_credential, initialize_repository,
     insert_credential, move_credential, remove_credential,
 };
+use sync::{set_remote, sync_data};
 use validators::{list_credentials, CredentialValuesParser};
 
+mod sync;
 mod validators;
 
 #[derive(Debug, Parser)]
@@ -27,6 +29,8 @@ enum Commands {
         shell: Shell,
     },
     Init,
+    #[command(subcommand)]
+    Syncronization(SyncCommands),
     Ls {
         #[arg(value_parser = CredentialValuesParser::dirs())]
         name: Option<String>,
@@ -63,6 +67,12 @@ enum Commands {
         target: String,
         destination: String,
     },
+}
+
+#[derive(Debug, Subcommand)]
+enum SyncCommands {
+    Config,
+    Exec,
 }
 
 fn parse_key_value(value: &str) -> Result<(String, String), String> {
@@ -124,6 +134,57 @@ fn main() {
                 Err(err) => eprintln!("{}", format_err(err)),
             };
         }
+        Commands::Syncronization(sub_command) => match sub_command {
+            SyncCommands::Config => {
+                let mut uri = String::new();
+                let mut username = String::new();
+
+                println!("Enter the uri of the repository to be set as remote:");
+                std::io::stdin()
+                    .read_line(&mut uri)
+                    .expect("failed to get read uri");
+
+                println!("Enter your git username:");
+                std::io::stdin()
+                    .read_line(&mut username)
+                    .expect("failed to get read username");
+
+                let password = rpassword::prompt_password(
+                    "Enter the git password or your PAT in the case of github: ",
+                )
+                .expect("failed to get read password");
+
+                match set_remote(username.trim(), &password, uri.trim()) {
+                    Ok(_) => {
+                        execute!(
+                            std::io::stdout(),
+                            MoveUp(5),
+                            Clear(ClearType::FromCursorDown)
+                        )
+                        .unwrap();
+                    }
+                    Err(err) => eprintln!("{}", format_err(err)),
+                }
+            }
+            SyncCommands::Exec => {
+                let password = rpassword::prompt_password("Enter the password of the PGP key: ")
+                    .expect("failed to get read password");
+
+                match sync_data(&password) {
+                    Ok(_) => {
+                        execute!(
+                            std::io::stdout(),
+                            MoveUp(1),
+                            Clear(ClearType::FromCursorDown)
+                        )
+                        .unwrap();
+
+                        print!("Synchronization complete!");
+                    }
+                    Err(err) => eprintln!("{}", format_err(err)),
+                }
+            }
+        },
         Commands::Insert {
             name,
             metadata,
